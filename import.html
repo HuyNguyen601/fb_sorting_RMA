@@ -85,8 +85,8 @@ function ExportToTable() {
 		data: jsondata,
 		colModel:[
 			//{name: 'Item_No', label: 'ID'},
-			{name: 'RMA_DOA_No', label: 'RMA_DOA_No'},
-			{name: 'serial_no', label: 'Serial_No'},
+			{name: 'RMA_DOA_No', label: 'RMA_DOA_No', search: true},
+			{name: 'serial_no', label: 'Serial_No', search: true},
 			{name: 'model_name', label: 'Model Name'},
 			{name: 'arrived_date', label:'Arrived'},
 			{name: 'currency', label: 'Currency'},
@@ -97,7 +97,7 @@ function ExportToTable() {
 			{name: 'problem_description', label: 'Problem Description'},
 			{name: 'repair_fee', label: 'RFee'},
 			{name: 'status', label: 'Status', 
-				editable: true, edittype: 'select', editoptions:{multiple: true, size:7, values:{'issued':'Issued', 'arrived':'Arrived', 'repaired':'Repaired', 'packed':'Packed', 'shipped':'Shipped', 'pending':'Pending', 'cancelled':'Cancelled'}}},
+				editable: true, edittype: 'select', editoptions:{value:"issued:issued; arrived:arrived; repaired:repaired; packed:packed; shipped:shipped; pending:pending; cancelled:cancelled"}},
 			{name: 'transit', label: 'Transit'},
 			{name: 'warranty_date', label: 'Warranty Date'},
 			{name: 'warranty_flag', label: 'Warranty Flag'}],	
@@ -111,6 +111,7 @@ function ExportToTable() {
 		multiselect: 'true',
 		pager: '#pager'
 		});
+	$('#grid').jqGrid('filterToolbar');
  }
 	
 </script>
