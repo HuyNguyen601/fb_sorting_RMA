@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Import Data</title>
+<link rel="stylesheet" type="text/css" media="screen" href="resource/jquery/jquery-ui.min.css" />
+<link rel="stylesheet" href="resource/bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="resource/jqGrid/css/ui.jqgrid.css" />
+<style>
+html, body {
+   margin: 0;
+   padding: 0;
+   font-size: 100%;
+}
+</style>
+<script src ="resource/jquery/jquery-3.2.1.js" type="text/javascript"></script>
+<script src="resource/jqGrid/js/i18n/grid.locale-en.js" type="text/javascript"></script>
+<script src="resource/jqGrid/js/jquery.jqGrid.min.js" type="text/javascript"></script>
+
+<!-- online hosted resource for excel files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.7.7/xlsx.core.min.js"></script>  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xls/0.7.4-a/xls.core.min.js"></script>  
+
+<script>
+function ExportToTable() {  
+     var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xlsx|.xls)$/;  
+     /*Checks whether the file is a valid excel file*/  
+     if (regex.test($("#excelfile").val().toLowerCase())) {  
+         var xlsxflag = false; /*Flag for checking whether excel is .xls format or .xlsx format*/  
+         if ($("#excelfile").val().toLowerCase().indexOf(".xlsx") > 0) {  
+             xlsxflag = true;  
+         }  
+         /*Checks whether the browser supports HTML5*/  
+         if (typeof (FileReader) != "undefined") {  
+             var reader = new FileReader();  
+             reader.onload = function (e) {  
+                 var data = e.target.result;  
+                 /*Converts the excel data in to object*/  
+                 if (xlsxflag) {  
+                     var workbook = XLSX.read(data, { type: 'binary' });  
+                 }  
+                 else {  
+                     var workbook = XLS.read(data, { type: 'binary' });  
+                 }  
+                 /*Gets all the sheetnames of excel in to a variable*/  
+                 var sheet_name_list = workbook.SheetNames;  
+  
+                 var cnt = 0; /*This is used for restricting the script to consider only first sheet of excel*/  
+                 sheet_name_list.forEach(function (y) { /*Iterate through all sheets*/  
+                     /*Convert the cell value to Json*/  
+                     if (xlsxflag) {  
+                         var exceljson = XLSX.utils.sheet_to_json(workbook.Sheets[y]);  
+                     }  
+                     else {
+                         var exceljson = XLS.utils.sheet_to_row_object_array(workbook.Sheets[y],{range:'A3:I3'});  
+                     }  
+                     if (exceljson.length > 0 && cnt == 0) {  
+						 gridTable(exceljson, '#grid');
+						 console.log(exceljson);
+                         cnt++;  
+                     }  
+                 });  
+                 $('#exceltable').show();  
+             }  
+             if (xlsxflag) {/*If excel file is .xlsx extension than creates a Array Buffer from excel*/  
+                 reader.readAsArrayBuffer($("#excelfile")[0].files[0]);  
+             }  
+             else {  
+                 reader.readAsBinaryString($("#excelfile")[0].files[0]);  
+             }  
+         }  
+         else {  
+             alert("Sorry! Your browser does not support HTML5!");  
+         }  
+     }  
+     else {  
+			alert("Please choose an excel file!!!");
+     }  
+ } 
+
+ function gridTable(jsondata, tableid){ 
+	$("#grid").jqGrid({
+		datatype:'local',
+		data: jsondata,
+		colModel:[
+			//{name: 'Item_No', label: 'ID'},
+			{name: 'RMA_DOA_No', label: 'RMA_DOA_No'},
+			{name: 'serial_no', label: 'Serial_No'},
+			{name: 'model_name', label: 'Model Name'},
+			{name: 'arrived_date', label:'Arrived'},
+			{name: 'currency', label: 'Currency'},
+			{name: 'estimate_repaired_date', label: 'Estimate Repaired'},
+			{name: 'inspection_fee', label: 'IFee'},
+			{name: 'issued_date', label: 'Issued'},
+			{name: 'problem_cause', label: 'Cause'},
+			{name: 'problem_description', label: 'Problem Description'},
+			{name: 'repair_fee', label: 'RFee'},
+			{name: 'status', label: 'Status', 
+				editable: true, edittype: 'select', editoptions:{multiple: true, size:7, values:{'issued':'Issued', 'arrived':'Arrived', 'repaired':'Repaired', 'packed':'Packed', 'shipped':'Shipped', 'pending':'Pending', 'cancelled':'Cancelled'}}},
+			{name: 'transit', label: 'Transit'},
+			{name: 'warranty_date', label: 'Warranty Date'},
+			{name: 'warranty_flag', label: 'Warranty Flag'}],	
+		caption: 'FB Sorting',
+		rowNum: 10,
+		rowList: [10,20,30],
+		cellEdit: true,
+		cellsubmit: 'clientArray',
+		autowidth: true,
+		height: 'auto',
+		multiselect: 'true',
+		pager: '#pager'
+		});
+ }
+	
+</script>
+</head>
+<body>
+	RMA Taiwan Excel: <input type="file" id="excelfile">
+	<input type="submit" value="Import File" id="viewfile" onclick="ExportToTable();">
+	<table id="grid"></table>
+	<div id="pager"></div>
+</body>
+</html>
