@@ -57,24 +57,52 @@ function ExportToTable() {
                  /*Gets all the sheetnames of excel in to a variable*/  
                  var sheet_name_list = workbook.SheetNames;  
   
-                 var cnt = 0; /*This is used for restricting the script to consider only first sheet of excel*/  
+                 var cnt = 0; /*This is used for restricting the script to consider only first sheet of excel*/ 
+				 var exceljson;
+				 var reportjson;
                  sheet_name_list.forEach(function (y) { /*Iterate through all sheets*/  
                      /*Convert the cell value to Json*/  
-                     if (xlsxflag) {  
-                         var exceljson = XLSX.utils.sheet_to_json(workbook.Sheets[y]);  
-                     }  
-                     else {
-                         var exceljson = XLS.utils.sheet_to_row_object_array(workbook.Sheets[y],{range:'A3:I3'});  
-                     }  
-                     if (exceljson.length > 0 && cnt == 0) {  
-						 gridTable(exceljson, '#grid');
-						 console.log(exceljson);
-                         cnt++;  
-                     }  
-                 });  
-                 $('#exceltable').show();  
+					 if ($('#portal').prop("checked",true))
+					 {
+						if (xlsxflag) {  
+							exceljson = XLSX.utils.sheet_to_json(workbook.Sheets[y]);  
+						}  
+						else {
+							exceljson = XLS.utils.sheet_to_json(workbook.Sheets[y]);  
+						}  
+					}
+					else if($('#report').prop("checked", true))
+					{
+						if (xlsxflag) {  
+							var range = XLSX.utils.decode_range(workbook.Sheets[y]['!ref']);
+							range.s.c = XLSX.utils.decode_col("A");
+							range.e.c = XLSX.utils.decode_col("I");
+							range.s.r = XLSX.utils.decode_row("3");
+							var newRange = XLSX.utils.encode_range(range);
+							reportjson = XLSX.utils.sheet_to_json(workbook.Sheets[y],{range:newRange});  
+						}  
+						else {
+							var range = XLS.utils.decode_range(workbook.Sheets[y]['!ref']);
+							range.s.c = XLS.utils.decode_col("A");
+							range.e.c = XLS.utils.decode_col("I");
+							range.s.r = XLS.utils.decode_row("3");
+							var newRange = XLS.utils.encode_range(range);
+							reportjson = XLS.utils.sheet_to_json(workbook.Sheets[y],{range:newRange});  
+						}
+					}
+					// Combine data from 2 files
+					//if(reportjson.length> 0 && exceljson.length >0)
+					{
+					}
+					
+					if (exceljson.length > 0 && cnt == 0) {  
+							gridTable(exceljson, '#grid');
+							console.log(exceljson);
+							cnt++;  
+						}
+                 });   
              }  
-             if (xlsxflag) {/*If excel file is .xlsx extension than creates a Array Buffer from excel*/  
+             if (xlsxflag) {/*If excel file is .xlsx extension then creates a Array Buffer from excel*/  
                  reader.readAsArrayBuffer($("#excelfile")[0].files[0]);  
              }  
              else {  
@@ -124,9 +152,9 @@ function ExportToTable() {
 		cellEdit: true,
 		cellsubmit: 'clientArray',
 		height: 'auto',
-		multiselect: 'true',
+		//multiselect: 'true',
 		autowidth: true,
-		viewRecord: true,
+		viewrecords: true,
 		pager: '#pager'
 		});
 	$('#grid').jqGrid('filterToolbar')
