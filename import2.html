@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Import Data</title>
+<link rel="stylesheet" type="text/css" media="screen" href="resource/jquery/jquery-ui.min.css" />
+
+<!-- A link to a Bootstrap css -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+<link rel="stylesheet" href="resource/bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="resource/jqGrid/css/ui.jqgrid.css" />
+<style>
+html, body {
+   margin: 0;
+   padding: 0;
+   font-size: 100%;
+}
+
+input.import {
+	width: 20em;
+	}
+</style>
+<script src ="resource/jquery/jquery-3.2.1.js" type="text/javascript"></script>
+<script src="resource/jqGrid/js/i18n/grid.locale-en.js" type="text/javascript"></script>
+<script src="resource/jqGrid/js/jquery.jqGrid.min.js" type="text/javascript"></script>
+<script>
+      // $.jgrid.defaults.styleUI = 'Bootstrap';
+   </script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+<!-- online hosted resource for excel files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.7.7/xlsx.core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xls/0.7.4-a/xls.core.min.js"></script>
+
+<script>
+function ExportToTable() {
+     var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xlsx|.xls)$/;
+     /*Checks whether the file is a valid excel file*/
+     if (regex.test($("#excelfile").val().toLowerCase())) {
+         var xlsxflag = false; /*Flag for checking whether excel is .xls format or .xlsx format*/
+         if ($("#excelfile").val().toLowerCase().indexOf(".xlsx") > 0) {
+             xlsxflag = true;
+         }
+         /*Checks whether the browser supports HTML5*/
+         if (typeof (FileReader) != "undefined") {
+             var reader = new FileReader();
+             reader.onload = function (e) {
+                 var data = e.target.result;
+                 /*Converts the excel data in to object*/
+                 if (xlsxflag) {
+                     var workbook = XLSX.read(data, { type: 'binary' });
+                 }
+                 else {
+                     var workbook = XLS.read(data, { type: 'binary' });
+                 }
+                 /*Gets all the sheetnames of excel in to a variable*/
+                 var sheet_name_list = workbook.SheetNames;
+
+                 var cnt = 0; /*This is used for restricting the script to consider only first sheet of excel*/
+				 var exceljson;
+				 var reportjson;
+                 sheet_name_list.forEach(function (y) { /*Iterate through all sheets*/
+                     /*Convert the cell value to Json*/
+					 if ($('#portal').prop("checked",true))
+					 {
+						if (xlsxflag) {
+							exceljson = XLSX.utils.sheet_to_json(workbook.Sheets[y]);
+						}
+						else {
+							exceljson = XLS.utils.sheet_to_json(workbook.Sheets[y]);
+						}
+					}
+					else if($('#report').prop("checked", true))
+					{
+						if (xlsxflag) {
+							var range = XLSX.utils.decode_range(workbook.Sheets[y]['!ref']);
+							range.s.c = XLSX.utils.decode_col("A");
+							range.e.c = XLSX.utils.decode_col("I");
+							range.s.r = XLSX.utils.decode_row("3");
+							var newRange = XLSX.utils.encode_range(range);
+							reportjson = XLSX.utils.sheet_to_json(workbook.Sheets[y],{range:newRange});
+						}
+						else {
+							var range = XLS.utils.decode_range(workbook.Sheets[y]['!ref']);
+							range.s.c = XLS.utils.decode_col("A");
+							range.e.c = XLS.utils.decode_col("I");
+							range.s.r = XLS.utils.decode_row("3");
+							var newRange = XLS.utils.encode_range(range);
+							reportjson = XLS.utils.sheet_to_json(workbook.Sheets[y],{range:newRange});
+						}
+					}
+					// Combine data from 2 files
+					//if(reportjson.length> 0 && exceljson.length >0)
+					{
+					}
+
+					if (exceljson.length > 0 && cnt == 0) {
+							gridTable(exceljson, '#grid');
+							console.log(exceljson);
+							cnt++;
+						}
+                 });
+             }
+             if (xlsxflag) {/*If excel file is .xlsx extension then creates a Array Buffer from excel*/
+                 reader.readAsArrayBuffer($("#excelfile")[0].files[0]);
+             }
+             else {
+                 reader.readAsBinaryString($("#excelfile")[0].files[0]);
+             }
+         }
+         else {
+             alert("Sorry! Your browser does not support HTML5!");
+         }
+     }
+     else {
+			alert("Please choose an excel file!!!");
+     }
+ }
+
+ function gridTable(jsondata, tableid){
+	$("#grid").jqGrid({
+		datatype:'local',
+		data: jsondata,
+		colModel:[
+			//{name: 'Item_No', label: 'ID'},
+			{name: 'RMA_DOA_No', label: 'RMA_No', width:100, search: true, align: 'center'},
+			{name: 'serial_no', label: 'Serial_No', width:110, search: true, key:true, align: 'center'},
+			{name: 'model_name', label: 'Model Name',search: true, align: 'center'},
+			//{name: 'arrived_date', label:'Arrived', search: true},
+			//{name: 'currency', label: 'Currency', search: true},
+			//{name: 'estimate_repaired_date', label: 'Estimate Repaired', search: true},
+			//{name: 'inspection_fee', label: 'IFee', search: true},
+			{name: 'issued_date', label: 'Issued', width:70, search: true, align: 'center'},
+			{name: 'problem_cause', label: 'Cause', width:70, align: 'center'},
+			{name: 'problem_description', label: 'Problem Description',width:200, fixed:true,
+				cellattr: function (rowId, tv, rawObject, cm, rdata) {
+					return 'style="white-space: normal;"';
+					}},
+			//{name: 'repair_fee', label: 'RFee', search: true},
+			{name: 'status', label: 'Status', align: 'center',
+				search: true, stype:'select',
+					searchoptions:{value:":[All];issued:issued;arrived:arrived;repaired:repaired;packed:packed;shipped:shipped; pending:pending;cancelled:cancelled"},
+				editable: true, edittype: 'select',
+					editoptions:{value:"issued:issued;arrived:arrived;repaired:repaired;packed:packed;shipped:shipped;pending:pending;cancelled:cancelled"}},
+			//{name: 'transit', label: 'Transit'},
+			{name: 'warranty_date', label: 'Warranty Date', align: 'center'},
+			{name: 'warranty_flag', label: 'Warranty Flag', align: 'center'}],
+		caption: 'FB Sorting',
+		rowNum: 10,
+		rowList: [10,20,30],
+		cellEdit: true,
+		cellsubmit: 'clientArray',
+		height: 'auto',
+		//multiselect: 'true',
+		autowidth: true,
+		viewrecords: true,
+		pager: '#pager',
+		subGrid: true,
+    subGridModel: [
+      {
+        name: ['1','2'],
+        width: [100,100],
+        align: ['center', 'center']
+      }
+    ]
+	});
+
+
+
+	$('#grid').jqGrid('filterToolbar')
+		.navGrid("#pager", {
+		//show search button
+			search: true,
+			add: false,
+			edit: false,
+			del: false,
+			refresh: true
+			},
+			{},//edit
+			{},// add
+			{},//delete
+			{
+				multiSearch: true,
+				multiGroup: true,
+				showQuery: true,
+				}
+			);
+ }
+
+</script>
+</head>
+<body>
+	Please upload an excel file:
+	<input type="file" id="excelfile" class="import">
+	Is it from Taiwan Portal or Email Report?
+	<input type="radio" name="filetype" value="Taiwan Portal" id="portal">
+	<label for="portal">Taiwan Portal</label>
+	<input type="radio" name="filetype" value="Report" id="report">
+	<label for="report">Email Report</label></br>
+	Which customer?
+	<input type="radio" name="customer" value="joytech" id="Joytech">
+	<label for="Joytech">Joy Tech</label>
+	<input type="radio" name="customer" value="celestica" id="Celestica">
+	<label for="Celestica">Celestica</label> </br>
+	<input type="submit" value="Import File" class="import" id="viewfile" onclick="ExportToTable();">
+	<table id="grid"></table>
+	<div id="pager"></div>
+</body>
+</html>
